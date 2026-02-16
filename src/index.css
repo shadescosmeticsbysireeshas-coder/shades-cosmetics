@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-shop-bg: #FFFBF0;
+  /* Soft Cream */
+  --color-shop-text: #2F4F4F;
+  /* Dark Slate ( Same as Parlour ) */
+  --color-shop-accent: #D4AF37;
+  /* Muted Gold for Store luxury */
+  --color-shop-muted: #F5E6E0;
+
+  --color-parlour-bg: #FFF0F5;
+  --color-parlour-primary: #2F4F4F;
+  --color-parlour-secondary: #FFE4E1;
+  --color-parlour-accent: #DB7093;
+  --color-parlour-card: #FFFFFF;
+
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-accent: #333333;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-cormorant: 'Cormorant Garamond', serif;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-black font-sans antialiased;
+  }
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}
