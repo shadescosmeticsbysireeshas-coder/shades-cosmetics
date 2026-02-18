@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Home from './pages/Home'; // Will become Shop Home
@@ -21,6 +22,18 @@ import { OrderProvider } from './context/OrderContext';
 const ShopLayoutWrapper = () => <Layout />;
 
 function App() {
+  useEffect(() => {
+    console.info('Firebase env loaded', {
+      hasApiKey: Boolean(import.meta.env.VITE_FIREBASE_API_KEY),
+      hasAuthDomain: Boolean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+      hasProjectId: Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+      hasStorageBucket: Boolean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+      hasMessagingSenderId: Boolean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+      hasAppId: Boolean(import.meta.env.VITE_FIREBASE_APP_ID),
+      hasMeasurementId: Boolean(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID)
+    });
+  }, []);
+
   return (
     <AuthProvider>
       <ShopProvider>

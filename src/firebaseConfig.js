@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyClPdv7ODSBUZ4Eo_Z8UfF_0GYziZN272Q",
-    authDomain: "shades-cosmetics-live.firebaseapp.com",
-    projectId: "shades-cosmetics-live",
-    storageBucket: "shades-cosmetics-live.firebasestorage.app",
-    messagingSenderId: "4548966814",
-    appId: "1:4548966814:web:59b89cd1e7beab0b45fe8f",
-    measurementId: "G-REXLG9D5X4"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
