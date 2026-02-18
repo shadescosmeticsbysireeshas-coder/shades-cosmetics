@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebaseConfig'; // Import Firestore
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { INITIAL_PRODUCTS } from '../data/mockData';
 
 const ShopContext = createContext();
 
@@ -8,18 +9,32 @@ export const ShopProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [usingMockProducts, setUsingMockProducts] = useState(false);
 
     const productsCollectionRef = collection(db, "products");
 
     // Fetch Products Real-time
     useEffect(() => {
-        const unsubscribe = onSnapshot(productsCollectionRef, (snapshot) => {
-            const items = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-            // Sort by creation time if needed, or name. 
-            // For now, let's just reverse so newest is top (if we added timestamp, but we'll stick to basic)
-            setProducts(items);
-            setLoading(false);
-        });
+        const unsubscribe = onSnapshot(
+            productsCollectionRef,
+            (snapshot) => {
+                const items = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                if (items.length === 0) {
+                    setProducts(INITIAL_PRODUCTS);
+                    setUsingMockProducts(true);
+                } else {
+                    setProducts(items);
+                    setUsingMockProducts(false);
+                }
+                setLoading(false);
+            },
+            (error) => {
+                console.error('Error fetching products:', error);
+                setProducts(INITIAL_PRODUCTS);
+                setUsingMockProducts(true);
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, []);
@@ -64,7 +79,7 @@ export const ShopProvider = ({ children }) => {
     };
 
     return (
-        <ShopContext.Provider value={{ products, cart, addProduct, updateProduct, deleteProduct, addToCart, loading }}>
+        <ShopContext.Provider value={{ products, cart, addProduct, updateProduct, deleteProduct, addToCart, loading, usingMockProducts }}>
             {children}
         </ShopContext.Provider>
     );

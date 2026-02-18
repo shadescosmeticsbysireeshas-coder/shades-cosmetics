@@ -5,7 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { Filter } from 'lucide-react';
 
 const Shop = () => {
-    const { products } = useShop();
+    const { products, usingMockProducts } = useShop();
     const [selectedBrand, setSelectedBrand] = useState('All');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
@@ -84,6 +84,12 @@ const Shop = () => {
                     <h1 className="text-xl font-light uppercase tracking-widest">Shop Collection</h1>
                     <span className="text-xs text-gray-500 uppercase tracking-widest">{filteredProducts.length} Results</span>
                 </div>
+
+                {usingMockProducts && (
+                    <div className="mb-6 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-xs uppercase tracking-widest text-amber-700">
+                        Showing sample products. Add real products in the admin dashboard to replace these.
+                    </div>
+                )}
 
                 {filteredProducts.length > 0 ? (
                     <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">

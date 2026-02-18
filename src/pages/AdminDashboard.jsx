@@ -63,7 +63,7 @@ const MetricCard = ({ title, value, icon: Icon, color = "bg-black" }) => (
 );
 
 const AdminDashboard = () => {
-    const { products, addProduct, updateProduct, deleteProduct } = useShop();
+    const { products, addProduct, updateProduct, deleteProduct, usingMockProducts } = useShop();
     const { appointments, updateStatus } = useAppointment();
     const { services, addService, updateService, deleteService } = useService();
     const { orders } = useOrder();
@@ -144,6 +144,12 @@ const AdminDashboard = () => {
                 <h1 className="text-2xl font-light uppercase tracking-widest">Admin Dashboard</h1>
                 <div className="text-xs uppercase tracking-widest text-gray-500">Admin: {user?.phone}</div>
             </div>
+
+            {usingMockProducts && (
+                <div className="mb-6 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-xs uppercase tracking-widest text-amber-700">
+                    You are viewing sample products. Add real products to Firestore to replace them.
+                </div>
+            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
