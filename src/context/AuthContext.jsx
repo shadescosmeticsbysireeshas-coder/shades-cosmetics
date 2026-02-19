@@ -10,8 +10,8 @@ const parseEnvList = (value = '') =>
         .map((item) => item.trim())
         .filter(Boolean);
 
-const ADMIN_EMAILS = parseEnvList(import.meta.env.VITE_ADMIN_EMAILS || '').map((email) => email.toLowerCase());
-const ADMIN_PHONES = parseEnvList(import.meta.env.VITE_ADMIN_PHONES || '');
+const DEFAULT_ADMIN_EMAILS = ['shadescosmeticsbysireeshas@gmail.com'];
+const DEFAULT_ADMIN_PHONES = ['+919959337123'];
 
 const normalizePhone = (phone = '') => {
     const value = String(phone).trim();
@@ -21,6 +21,14 @@ const normalizePhone = (phone = '') => {
     }
     return value.replace(/\D/g, '');
 };
+
+const ADMIN_EMAILS = Array.from(
+    new Set([...DEFAULT_ADMIN_EMAILS, ...parseEnvList(import.meta.env.VITE_ADMIN_EMAILS || '')].map((email) => email.toLowerCase()))
+);
+
+const ADMIN_PHONES = Array.from(
+    new Set([...DEFAULT_ADMIN_PHONES, ...parseEnvList(import.meta.env.VITE_ADMIN_PHONES || '')].map((phone) => normalizePhone(phone)))
+);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -34,14 +42,17 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
 
+            const email = (currentUser.email || '').toLowerCase();
+            const phone = normalizePhone(currentUser.phoneNumber || '');
+            let claimAdmin = false;
+
             try {
                 const tokenResult = await getIdTokenResult(currentUser);
                 const claimRole = tokenResult?.claims?.role;
-                const claimAdmin = tokenResult?.claims?.admin === true || claimRole === 'admin';
-
-                const email = (currentUser.email || '').toLowerCase();
-                const phone = normalizePhone(currentUser.phoneNumber || '');
-
+                claimAdmin = tokenResult?.claims?.admin === true || claimRole === 'admin';
+            } catch (error) {
+                console.error('Error resolving auth user role:', error);
+            } finally {
                 const envAdmin = (email && ADMIN_EMAILS.includes(email)) || (phone && ADMIN_PHONES.includes(phone));
                 const isAdmin = Boolean(claimAdmin || envAdmin);
 
@@ -53,17 +64,7 @@ export const AuthProvider = ({ children }) => {
                     photo: currentUser.photoURL || '',
                     role: isAdmin ? 'admin' : 'customer'
                 });
-            } catch (error) {
-                console.error('Error resolving auth user role:', error);
-                setUser({
-                    id: currentUser.uid,
-                    name: currentUser.displayName || 'User',
-                    phone: currentUser.phoneNumber || '',
-                    email: currentUser.email || '',
-                    photo: currentUser.photoURL || '',
-                    role: 'customer'
-                });
-            } finally {
+
                 setLoading(false);
             }
         });
