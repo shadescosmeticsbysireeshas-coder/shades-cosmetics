@@ -2,25 +2,27 @@ import { useMemo, useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import ProductCard from '../components/ProductCard';
 import { Filter } from 'lucide-react';
+import { ELECTRONICS_PRODUCTS } from '../data/electronicsProducts';
 
 const Shop = () => {
     const { products } = useShop();
+    const availableProducts = products.length > 0 ? products : ELECTRONICS_PRODUCTS;
     const [selectedBrand, setSelectedBrand] = useState('All');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
 
     const brands = useMemo(
-        () => [...new Set(products.map((product) => product.brand).filter(Boolean))].sort(),
-        [products]
+        () => [...new Set(availableProducts.map((product) => product.brand).filter(Boolean))].sort(),
+        [availableProducts]
     );
 
     const categories = useMemo(
-        () => [...new Set(products.map((product) => product.category).filter(Boolean))].sort(),
-        [products]
+        () => [...new Set(availableProducts.map((product) => product.category).filter(Boolean))].sort(),
+        [availableProducts]
     );
 
     // Filtering
-    const filteredProducts = products.filter(p => {
+    const filteredProducts = availableProducts.filter(p => {
         const brandMatch = selectedBrand === 'All' || p.brand === selectedBrand;
         const catMatch = selectedCategory === 'All' || p.category === selectedCategory;
         return brandMatch && catMatch;
