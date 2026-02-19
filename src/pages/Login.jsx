@@ -9,7 +9,7 @@ const Login = () => {
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState(1); // 1: Phone, 2: OTP
     const [error, setError] = useState('');
-    const { login, verifyOtp, loginWithGoogle } = useAuth();
+    const { user, loading, login, verifyOtp, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -47,6 +47,20 @@ const Login = () => {
     useEffect(() => {
         initializeRecaptcha();
     }, []);
+
+    useEffect(() => {
+        if (loading || !user) return;
+
+        if (user.role === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+            return;
+        }
+
+        const from = location.state?.from?.pathname;
+        if (from && from !== '/login') {
+            navigate(from, { replace: true });
+        }
+    }, [user, loading, navigate, location.state]);
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
