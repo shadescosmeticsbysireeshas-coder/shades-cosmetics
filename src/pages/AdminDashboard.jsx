@@ -5,8 +5,8 @@ import { useAppointment } from '../context/AppointmentContext';
 import { useService } from '../context/ServiceContext';
 import { useOrder } from '../context/OrderContext';
 import { useNavigate } from 'react-router-dom';
-import { BRANDS, CATEGORIES } from '../data/mockData';
 import { Package, XCircle, AlertTriangle, CheckCircle, Calendar, TrendingUp } from 'lucide-react';
+import { importElectronicsProducts } from '../utils/importElectronics';
 
 // Mock Upload Component using URL input
 const ImageUpload = ({ value, onChange, label }) => {
@@ -63,7 +63,7 @@ const MetricCard = ({ title, value, icon: Icon, color = "bg-black" }) => (
 );
 
 const AdminDashboard = () => {
-    const { products, addProduct, updateProduct, deleteProduct, usingMockProducts } = useShop();
+    const { products, addProduct, updateProduct, deleteProduct } = useShop();
     const { appointments, updateStatus } = useAppointment();
     const { services, addService, updateService, deleteService } = useService();
     const { orders } = useOrder();
@@ -74,12 +74,16 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('inventory'); // inventory | appointments | services
 
     // Product Form State
-    const [prodForm, setProdForm] = useState({ name: '', brand: BRANDS[0], category: CATEGORIES[0], price: '', status: 'In Stock', image: '', description: '' });
+    const [prodForm, setProdForm] = useState({ name: '', brand: '', category: '', price: '', status: 'In Stock', image: '', description: '' });
     const [editingProdId, setEditingProdId] = useState(null);
 
     // Service Form State
     const [servForm, setServForm] = useState({ title: '', price: '', duration: '', image: '' });
     const [editingServId, setEditingServId] = useState(null);
+
+    // Import State
+    const [importing, setImporting] = useState(false);
+    const [importMessage, setImportMessage] = useState('');
 
     // Protect Route
     useEffect(() => {
@@ -111,7 +115,7 @@ const AdminDashboard = () => {
         } else {
             addProduct(productData);
         }
-        setProdForm({ name: '', brand: BRANDS[0], category: CATEGORIES[0], price: '', status: 'In Stock', image: '', description: '' });
+        setProdForm({ name: '', brand: '', category: '', price: '', status: 'In Stock', image: '', description: '' });
     };
 
     const handleEditProduct = (product) => {
@@ -138,18 +142,31 @@ const AdminDashboard = () => {
         setEditingServId(service.id);
     };
 
+    // --- Import Handler ---
+    const handleImportElectronics = async () => {
+        setImporting(true);
+        setImportMessage('');
+
+        const result = await importElectronicsProducts();
+
+        if (result.success) {
+            setImportMessage(`✅ Successfully imported ${result.count} electronics products!`);
+        } else {
+            setImportMessage(`❌ Error importing products. Please try again.`);
+        }
+
+        setImporting(false);
+
+        // Clear message after 5 seconds
+        setTimeout(() => setImportMessage(''), 5000);
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-2xl font-light uppercase tracking-widest">Admin Dashboard</h1>
                 <div className="text-xs uppercase tracking-widest text-gray-500">Admin: {user?.phone}</div>
             </div>
-
-            {usingMockProducts && (
-                <div className="mb-6 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-xs uppercase tracking-widest text-amber-700">
-                    You are viewing sample products. Add real products to Firestore to replace them.
-                </div>
-            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
@@ -187,9 +204,24 @@ const AdminDashboard = () => {
                 <div>
                     {/* Product Form */}
                     <div className="bg-gray-50 p-6 mb-12 border border-gray-100 rounded-lg">
-                        <h2 className="text-xs font-bold uppercase tracking-widest mb-6 border-b pb-2">
-                            {editingProdId ? 'Edit Product' : 'Add New Product'}
-                        </h2>
+                        <div className="flex justify-between items-center mb-6 border-b pb-2">
+                            <h2 className="text-xs font-bold uppercase tracking-widest">
+                                {editingProdId ? 'Edit Product' : 'Add New Product'}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={handleImportElectronics}
+                                disabled={importing}
+                                className="bg-blue-600 text-white px-4 py-2 text-[10px] uppercase font-bold tracking-widest hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {importing ? 'Importing...' : '📦 Import Electronics'}
+                            </button>
+                        </div>
+                        {importMessage && (
+                            <div className={`mb-4 p-3 rounded text-xs ${importMessage.includes('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {importMessage}
+                            </div>
+                        )}
                         <form onSubmit={handleProductSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
                                 <input
@@ -234,20 +266,20 @@ const AdminDashboard = () => {
                                     <option value="Out of Stock">Out of Stock</option>
                                 </select>
                             </div>
-                            <select
-                                className="border-b border-gray-300 p-2 bg-transparent outline-none focus:border-black"
+                            <input
+                                className="border-b border-gray-300 p-2 bg-transparent outline-none focus:border-black transition-colors"
+                                placeholder="Brand"
                                 value={prodForm.brand}
                                 onChange={e => setProdForm({ ...prodForm, brand: e.target.value })}
-                            >
-                                {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                            <select
-                                className="border-b border-gray-300 p-2 bg-transparent outline-none focus:border-black"
+                                required
+                            />
+                            <input
+                                className="border-b border-gray-300 p-2 bg-transparent outline-none focus:border-black transition-colors"
+                                placeholder="Category"
                                 value={prodForm.category}
                                 onChange={e => setProdForm({ ...prodForm, category: e.target.value })}
-                            >
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
+                                required
+                            />
 
                             <div className="md:col-span-2 mt-4 flex gap-4">
                                 <button type="submit" className="flex-1 bg-black text-white py-4 uppercase tracking-widest text-xs font-bold hover:bg-gray-800 transition-colors">
@@ -256,7 +288,7 @@ const AdminDashboard = () => {
                                 {editingProdId && (
                                     <button
                                         type="button"
-                                        onClick={() => { setEditingProdId(null); setProdForm({ name: '', brand: BRANDS[0], category: CATEGORIES[0], price: '', status: 'In Stock', image: '', description: '' }); }}
+                                        onClick={() => { setEditingProdId(null); setProdForm({ name: '', brand: '', category: '', price: '', status: 'In Stock', image: '', description: '' }); }}
                                         className="px-8 text-center text-xs uppercase tracking-widest text-red-500 border border-red-200 hover:bg-red-50"
                                     >
                                         Cancel

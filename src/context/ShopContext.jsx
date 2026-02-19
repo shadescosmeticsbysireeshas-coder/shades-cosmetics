@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebaseConfig'; // Import Firestore
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
-import { INITIAL_PRODUCTS } from '../data/mockData';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 
 const ShopContext = createContext();
 
@@ -9,7 +8,6 @@ export const ShopProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [usingMockProducts, setUsingMockProducts] = useState(false);
 
     const productsCollectionRef = collection(db, "products");
 
@@ -19,19 +17,12 @@ export const ShopProvider = ({ children }) => {
             productsCollectionRef,
             (snapshot) => {
                 const items = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                if (items.length === 0) {
-                    setProducts(INITIAL_PRODUCTS);
-                    setUsingMockProducts(true);
-                } else {
-                    setProducts(items);
-                    setUsingMockProducts(false);
-                }
+                setProducts(items);
                 setLoading(false);
             },
             (error) => {
                 console.error('Error fetching products:', error);
-                setProducts(INITIAL_PRODUCTS);
-                setUsingMockProducts(true);
+                setProducts([]);
                 setLoading(false);
             }
         );
@@ -79,7 +70,7 @@ export const ShopProvider = ({ children }) => {
     };
 
     return (
-        <ShopContext.Provider value={{ products, cart, addProduct, updateProduct, deleteProduct, addToCart, loading, usingMockProducts }}>
+        <ShopContext.Provider value={{ products, cart, addProduct, updateProduct, deleteProduct, addToCart, loading }}>
             {children}
         </ShopContext.Provider>
     );
