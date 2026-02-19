@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Home from './pages/Home'; // Will become Shop Home
 import Shop from './pages/Shop';
@@ -17,9 +17,29 @@ import { ShopProvider } from './context/ShopContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { ServiceProvider } from './context/ServiceContext';
 import { OrderProvider } from './context/OrderContext';
+import { useAuth } from './context/AuthContext';
 
 // Temporary component for Shop Layout until we rename existing Layout
 const ShopLayoutWrapper = () => <Layout />;
+
+const AdminRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="py-20 text-center text-sm uppercase tracking-widest text-gray-500">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   useEffect(() => {
@@ -61,7 +81,14 @@ function App() {
                   {/* Shared/Utility Routes - kept flat for now or moved under themes */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/profile" element={<Profile />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route
+                    path="/admin/dashboard"
+                    element={
+                      <AdminRoute>
+                        <AdminDashboard />
+                      </AdminRoute>
+                    }
+                  />
 
                 </Routes>
               </BrowserRouter>

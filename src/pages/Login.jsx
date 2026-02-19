@@ -13,17 +13,9 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const isAdminUser = (authUser) => (
-        authUser?.phoneNumber === '+919999999999' || authUser?.email === 'admin@shades.com'
-    );
-
     const handleGoogleLogin = async () => {
         try {
-            const authUser = await loginWithGoogle();
-            if (isAdminUser(authUser)) {
-                navigate('/admin/dashboard', { replace: true });
-                return;
-            }
+            await loginWithGoogle();
             const from = location.state?.from?.pathname || "/";
             navigate(from, { replace: true });
         } catch (err) {
@@ -52,22 +44,12 @@ const Login = () => {
 
         if (normalizedPhone.length === 10 && /^\d+$/.test(normalizedPhone)) {
             try {
-                if (normalizedPhone === '9999999999') {
-                    await login(normalizedPhone, null);
-                    navigate('/admin/dashboard', { replace: true });
-                    return;
-                }
-
                 const appVerifier = window.recaptchaVerifier;
-                const loginResult = await login(normalizedPhone, appVerifier);
-                if (isAdminUser(loginResult?.user)) {
-                    navigate('/admin/dashboard', { replace: true });
-                    return;
-                }
+                await login(normalizedPhone, appVerifier);
                 setStep(2);
             } catch (err) {
                 console.error(err);
-                setError('Failed to send OTP. Try again using the test number (9999999999).');
+                setError('Failed to send OTP. Please try again.');
                 if (window.recaptchaVerifier) {
                     window.recaptchaVerifier.clear();
                     window.recaptchaVerifier = null;
@@ -81,13 +63,9 @@ const Login = () => {
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
         try {
-            const authUser = await verifyOtp(otp);
-            if (isAdminUser(authUser)) {
-                navigate('/admin/dashboard');
-            } else {
-                const from = location.state?.from?.pathname || "/";
-                navigate(from, { replace: true });
-            }
+            await verifyOtp(otp);
+            const from = location.state?.from?.pathname || "/";
+            navigate(from, { replace: true });
         } catch (err) {
             setError('Invalid OTP. Please try again.');
         }

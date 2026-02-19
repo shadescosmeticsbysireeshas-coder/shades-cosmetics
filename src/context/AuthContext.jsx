@@ -1,71 +1,89 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { auth, googleProvider } from '../firebaseConfig';
-import { RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
+import { signInWithPhoneNumber, signInWithPopup, onAuthStateChanged, signOut, getIdTokenResult } from "firebase/auth";
 
 const AuthContext = createContext();
+
+const parseEnvList = (value = '') =>
+    value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+const ADMIN_EMAILS = parseEnvList(import.meta.env.VITE_ADMIN_EMAILS || '').map((email) => email.toLowerCase());
+const ADMIN_PHONES = parseEnvList(import.meta.env.VITE_ADMIN_PHONES || '');
+
+const normalizePhone = (phone = '') => {
+    const value = String(phone).trim();
+    if (!value) return '';
+    if (value.startsWith('+')) {
+        return `+${value.slice(1).replace(/\D/g, '')}`;
+    }
+    return value.replace(/\D/g, '');
+};
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Use Firebase Auth listener for real-time session management
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                // Map Firebase user to our app structure
-                // For now, simpler admin check (can be improved with Firestore roles later)
-                const isAdmin = currentUser.phoneNumber === '+919999999999' || currentUser.email === 'admin@shades.com';
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (!currentUser) {
+                setUser(null);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const tokenResult = await getIdTokenResult(currentUser);
+                const claimRole = tokenResult?.claims?.role;
+                const claimAdmin = tokenResult?.claims?.admin === true || claimRole === 'admin';
+
+                const email = (currentUser.email || '').toLowerCase();
+                const phone = normalizePhone(currentUser.phoneNumber || '');
+
+                const envAdmin = (email && ADMIN_EMAILS.includes(email)) || (phone && ADMIN_PHONES.includes(phone));
+                const isAdmin = Boolean(claimAdmin || envAdmin);
 
                 setUser({
                     id: currentUser.uid,
                     name: currentUser.displayName || 'User',
-                    phone: currentUser.phoneNumber,
-                    email: currentUser.email,
-                    photo: currentUser.photoURL,
-                    role: isAdmin ? 'admin' : 'customer' // Basic role logic
+                    phone: currentUser.phoneNumber || '',
+                    email: currentUser.email || '',
+                    photo: currentUser.photoURL || '',
+                    role: isAdmin ? 'admin' : 'customer'
                 });
-            } else {
-                setUser(null);
+            } catch (error) {
+                console.error('Error resolving auth user role:', error);
+                setUser({
+                    id: currentUser.uid,
+                    name: currentUser.displayName || 'User',
+                    phone: currentUser.phoneNumber || '',
+                    email: currentUser.email || '',
+                    photo: currentUser.photoURL || '',
+                    role: 'customer'
+                });
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         });
 
         return () => unsubscribe();
     }, []);
 
-    const loginWithPhone = (phone, appVerifier) => {
-        return new Promise((resolve, reject) => {
-            // Dev Bypass
-            if (phone === '9999999999') {
-                // Allow dev bypass to trigger auth state change manually for testing if needed, 
-                // but ideally we rely on firebase. 
-                // Since we can't easily mock the auth state change in this architecture without a real sign in,
-                // we will just resolve for now. 
-                // Note: To truly log in as admin with dev bypass, we might need a real test user in Firebase 
-                // or just rely on the 'user' state being set manually if we keep the hybrid approach.
-                // BUT, for production/hosting, better to rely on real Auth.
-                // Let's keep the bypass for local dev but acknowledge it won't persist via onAuthStateChanged unless we mock that too.
-                const mockUser = {
-                    uid: 'admin-dev-id',
-                    phoneNumber: '+919999999999',
-                    displayName: 'Admin User',
-                };
-                // We manually set user here to support the legacy bypass flow
-                setUser({ ...mockUser, id: mockUser.uid, name: mockUser.displayName, phone: mockUser.phoneNumber, role: 'admin' });
-                resolve({ user: mockUser });
-                return;
-            }
+    const loginWithPhone = async (phone, appVerifier) => {
+        const normalizedPhone = String(phone || '').replace(/\D/g, '');
+        if (normalizedPhone.length !== 10) {
+            throw new Error('Please provide a valid 10-digit phone number.');
+        }
+        if (!appVerifier) {
+            throw new Error('reCAPTCHA verification is required before sending OTP.');
+        }
 
-            const phoneNumber = "+91" + phone;
-            signInWithPhoneNumber(auth, phoneNumber, appVerifier)
-                .then((confirmationResult) => {
-                    window.confirmationResult = confirmationResult;
-                    resolve(confirmationResult);
-                }).catch((error) => {
-                    console.error("Error sending SMS", error);
-                    reject(error);
-                });
-        });
+        const phoneNumber = `+91${normalizedPhone}`;
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        window.confirmationResult = confirmationResult;
+        return confirmationResult;
     };
 
     const verifyOtp = async (otp) => {

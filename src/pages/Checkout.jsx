@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
 import { useOrder } from '../context/OrderContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Checkout = () => {
     const { cart } = useShop();
     const { addOrder } = useOrder();
+    const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         address: '',
@@ -18,19 +22,49 @@ const Checkout = () => {
 
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        if (!user) {
+            navigate('/login', { state: { from: location } });
+        }
+    }, [user, navigate, location]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const order = addOrder({
+        setSubmitting(true);
+
+        const order = await addOrder({
+            userId: user?.id || null,
+            userEmail: user?.email || '',
             items: cart,
+            subtotal: total,
+            shipping: 0,
+            tax: 0,
             total: total,
-            customer: formData
+            currency: 'INR',
+            customer: formData,
+            payment: {
+                method: 'COD',
+                status: 'Pending',
+                provider: 'COD',
+                transactionId: null,
+                paidAt: null
+            }
         });
-        alert(`Order Placed Successfully! Order ID: ${order.id}`);
-        // In a real app, we'd clear the cart here
+
+        setSubmitting(false);
+
+        if (!order) {
+            alert('Failed to place order. Please try again.');
+            return;
+        }
+
+        alert(`Order Placed Successfully! Order ID: ${order.orderNumber || order.id}`);
         navigate('/');
     };
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    if (!user) return null;
 
     if (cart.length === 0) {
         return (
@@ -106,8 +140,8 @@ const Checkout = () => {
                         </select>
                     </div>
 
-                    <button type="submit" className="w-full bg-black text-white py-4 uppercase tracking-widest text-xs font-bold hover:bg-gray-800 transition-colors mt-8">
-                        Place Order (COD)
+                        <button disabled={submitting} type="submit" className="w-full bg-black text-white py-4 uppercase tracking-widest text-xs font-bold hover:bg-gray-800 transition-colors mt-8 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        {submitting ? 'Placing Order...' : 'Place Order (COD)'}
                     </button>
                 </form>
             </div>
