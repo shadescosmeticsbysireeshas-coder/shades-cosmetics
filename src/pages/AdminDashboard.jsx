@@ -5,7 +5,17 @@ import { useAppointment } from '../context/AppointmentContext';
 import { useService } from '../context/ServiceContext';
 import { useOrder } from '../context/OrderContext';
 import { useNavigate } from 'react-router-dom';
-import { Package, XCircle, AlertTriangle, CheckCircle, Calendar, TrendingUp } from 'lucide-react';
+import {
+    Package,
+    Calendar,
+    TrendingUp,
+    LayoutDashboard,
+    ShoppingBag,
+    Scissors,
+    ClipboardCheck,
+    Search,
+    Building2
+} from 'lucide-react';
 import { importElectronicsProducts } from '../utils/importElectronics';
 
 // Mock Upload Component using URL input
@@ -96,13 +106,16 @@ const AdminDashboard = () => {
 
     // Metrics
     const ordersPlaced = orders.length;
-    const ordersCancelled = orders.filter(o => o.status === 'Cancelled').length;
-    const outOfStock = products.filter(p => p.status === 'Out of Stock').length;
-    const inStock = products.filter(p => p.status === 'In Stock').length;
     const appointmentsBooked = appointments.length;
 
     // Calculate Total Revenue
     const totalRevenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+
+    const menuItems = [
+        { key: 'inventory', label: 'Products', icon: ShoppingBag },
+        { key: 'services', label: 'Services', icon: Scissors },
+        { key: 'appointments', label: 'Appointments', icon: ClipboardCheck }
+    ];
 
     // --- Product Handlers ---
     const handleProductSubmit = (e) => {
@@ -162,43 +175,115 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-2xl font-light uppercase tracking-widest">Admin Dashboard</h1>
-                <div className="text-xs uppercase tracking-widest text-gray-500">Admin: {user?.phone}</div>
-            </div>
+        <div className="min-h-screen bg-gray-50 -mx-4 md:-mx-6 lg:-mx-8">
+            <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div className="text-2xl font-semibold">Shades</div>
+                        <p className="text-xs text-gray-500 uppercase tracking-widest">Super Admin Panel</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex items-center gap-2 border rounded-md px-3 py-2 bg-gray-50 w-80">
+                            <Search className="w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search products, services..."
+                                className="bg-transparent outline-none text-sm w-full"
+                            />
+                        </div>
+                        <div className="text-xs uppercase tracking-widest text-gray-500">{user?.email || user?.phone}</div>
+                    </div>
+                </div>
+            </header>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
-                <MetricCard title="Orders Placed" value={ordersPlaced} icon={Package} color="bg-blue-500" />
-                <MetricCard title="Cancelled" value={ordersCancelled} icon={XCircle} color="bg-red-500" />
-                <MetricCard title="Out of Stock" value={outOfStock} icon={AlertTriangle} color="bg-yellow-500" />
-                <MetricCard title="In Stock" value={inStock} icon={CheckCircle} color="bg-green-500" />
-                <MetricCard title="Appointments" value={appointmentsBooked} icon={Calendar} color="bg-purple-500" />
-                <MetricCard title="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} icon={TrendingUp} color="bg-emerald-500" />
-            </div>
+            <div className="flex">
+                <aside className="hidden md:block w-64 bg-white border-r border-gray-200 p-4">
+                    <div className="flex items-center gap-2 px-3 py-2 mb-4 text-xs uppercase tracking-widest font-bold text-gray-700">
+                        <LayoutDashboard className="w-4 h-4" /> Dashboard
+                    </div>
 
-            {/* Tabs */}
-            <div className="flex gap-8 border-b border-gray-100 mb-8 overflow-x-auto">
-                <button
-                    onClick={() => setActiveTab('inventory')}
-                    className={`pb-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'inventory' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Store Inventory
-                </button>
-                <button
-                    onClick={() => setActiveTab('services')}
-                    className={`pb-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'services' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Parlour Services
-                </button>
-                <button
-                    onClick={() => setActiveTab('appointments')}
-                    className={`pb-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'appointments' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Appointments
-                </button>
-            </div>
+                    <nav className="space-y-1">
+                        {menuItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = activeTab === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    onClick={() => setActiveTab(item.key)}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${isActive
+                                        ? 'bg-black text-white'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    {item.label}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </aside>
+
+                <main className="flex-1 p-4 md:p-6">
+                    <section className="mb-6">
+                        <h1 className="text-3xl font-semibold">Super Admin Dashboard</h1>
+                        <p className="text-sm text-gray-500 mt-1">Welcome back! Here's what's happening in your store.</p>
+                    </section>
+
+                    <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                        <MetricCard title="Orders Placed" value={ordersPlaced} icon={Package} color="bg-blue-500" />
+                        <MetricCard title="Active Products" value={products.length} icon={Building2} color="bg-violet-500" />
+                        <MetricCard title="Appointments" value={appointmentsBooked} icon={Calendar} color="bg-emerald-500" />
+                        <MetricCard title="Total Revenue" value={`₹${totalRevenue.toLocaleString()}`} icon={TrendingUp} color="bg-amber-500" />
+                    </section>
+
+                    <section className="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <button
+                                onClick={() => setActiveTab('inventory')}
+                                className="border rounded-md p-4 text-left hover:border-black transition-colors"
+                            >
+                                <p className="text-sm font-semibold">Manage Products</p>
+                                <p className="text-xs text-gray-500 mt-1">Add or edit store inventory.</p>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('services')}
+                                className="border rounded-md p-4 text-left hover:border-black transition-colors"
+                            >
+                                <p className="text-sm font-semibold">Manage Services</p>
+                                <p className="text-xs text-gray-500 mt-1">Create and update parlour services.</p>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('appointments')}
+                                className="border rounded-md p-4 text-left hover:border-black transition-colors"
+                            >
+                                <p className="text-sm font-semibold">Review Appointments</p>
+                                <p className="text-xs text-gray-500 mt-1">Approve or reject pending bookings.</p>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section className="bg-white border border-gray-200 rounded-lg p-5">
+                        <div className="flex flex-wrap gap-4 border-b border-gray-100 mb-6">
+                            <button
+                                onClick={() => setActiveTab('inventory')}
+                                className={`pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'inventory' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Store Inventory
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('services')}
+                                className={`pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'services' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Parlour Services
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('appointments')}
+                                className={`pb-3 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${activeTab === 'appointments' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                Appointments
+                            </button>
+                        </div>
 
             {activeTab === 'inventory' && (
                 <div>
@@ -475,6 +560,9 @@ const AdminDashboard = () => {
                     )}
                 </div>
             )}
+                    </section>
+                </main>
+            </div>
         </div>
     );
 };
