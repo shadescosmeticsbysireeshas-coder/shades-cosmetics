@@ -11,7 +11,7 @@ const parseEnvList = (value = '') =>
         .filter(Boolean);
 
 const DEFAULT_ADMIN_EMAILS = ['shadescosmeticsbysireeshas@gmail.com'];
-const DEFAULT_ADMIN_PHONES = ['+919959337123'];
+const DEFAULT_ADMIN_PHONES = ['+919959371238'];
 
 const normalizePhone = (phone = '') => {
     const value = String(phone).trim();
@@ -53,8 +53,17 @@ export const AuthProvider = ({ children }) => {
             } catch (error) {
                 console.error('Error resolving auth user role:', error);
             } finally {
-                const envAdmin = (email && ADMIN_EMAILS.includes(email)) || (phone && ADMIN_PHONES.includes(phone));
+                const emailAllowlistMatch = Boolean(email && ADMIN_EMAILS.includes(email));
+                const phoneAllowlistMatch = Boolean(phone && ADMIN_PHONES.includes(phone));
+                const envAdmin = emailAllowlistMatch || phoneAllowlistMatch;
                 const isAdmin = Boolean(claimAdmin || envAdmin);
+                const adminSource = claimAdmin
+                    ? 'token-claim'
+                    : emailAllowlistMatch
+                        ? 'email-allowlist'
+                        : phoneAllowlistMatch
+                            ? 'phone-allowlist'
+                            : 'none';
 
                 setUser({
                     id: currentUser.uid,
@@ -62,7 +71,8 @@ export const AuthProvider = ({ children }) => {
                     phone: currentUser.phoneNumber || '',
                     email: currentUser.email || '',
                     photo: currentUser.photoURL || '',
-                    role: isAdmin ? 'admin' : 'customer'
+                    role: isAdmin ? 'admin' : 'customer',
+                    adminSource
                 });
 
                 setLoading(false);

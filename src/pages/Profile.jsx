@@ -30,6 +30,13 @@ const Profile = () => {
                 </button>
             </div>
 
+            <div className="mb-8 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                <p className="uppercase tracking-widest font-bold mb-2">Temporary Auth Debug</p>
+                <p>Role: {user.role || 'unknown'}</p>
+                <p>Email: {user.email || 'n/a'}</p>
+                <p>Admin Source: {user.adminSource || 'none'}</p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {/* Profile Info */}
                 <div>
