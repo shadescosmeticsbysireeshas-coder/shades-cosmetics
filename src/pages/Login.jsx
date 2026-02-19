@@ -13,6 +13,27 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const initializeRecaptcha = () => {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible'
+            });
+        }
+        return window.recaptchaVerifier;
+    };
+
+    const resetRecaptcha = () => {
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (error) {
+                console.warn('Failed to clear recaptcha instance', error);
+            }
+            window.recaptchaVerifier = null;
+        }
+        return initializeRecaptcha();
+    };
+
     const handleGoogleLogin = async () => {
         try {
             await loginWithGoogle();
@@ -24,17 +45,7 @@ const Login = () => {
     };
 
     useEffect(() => {
-        if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                },
-                'expired-callback': () => {
-                    // Response expired. Ask user to solve reCAPTCHA again.
-                }
-            });
-        }
+        initializeRecaptcha();
     }, []);
 
     const handleSendOtp = async (e) => {
@@ -44,16 +55,20 @@ const Login = () => {
 
         if (normalizedPhone.length === 10 && /^\d+$/.test(normalizedPhone)) {
             try {
-                const appVerifier = window.recaptchaVerifier;
+                const appVerifier = initializeRecaptcha();
                 await login(normalizedPhone, appVerifier);
                 setStep(2);
             } catch (err) {
                 console.error(err);
-                setError('Failed to send OTP. Please try again.');
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = null;
+                const code = err?.code || '';
+                if (code === 'auth/billing-not-enabled') {
+                    setError('OTP is disabled on Firebase billing. Enable billing and Phone Authentication in Firebase Console.');
+                } else if (code === 'auth/invalid-api-key') {
+                    setError('Firebase API key is invalid. Check VITE_FIREBASE_API_KEY in hosting environment variables.');
+                } else {
+                    setError('Failed to send OTP. Please try again.');
                 }
+                resetRecaptcha();
             }
         } else {
             setError('Please enter a valid 10-digit mobile number');
