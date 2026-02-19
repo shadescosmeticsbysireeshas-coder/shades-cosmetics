@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
 
 const OrderContext = createContext();
 
@@ -73,8 +73,19 @@ export const OrderProvider = ({ children }) => {
         }
     };
 
+    const clearAllOrders = async () => {
+        try {
+            const snapshot = await getDocs(ordersCollectionRef);
+            await Promise.all(snapshot.docs.map((docItem) => deleteDoc(docItem.ref)));
+            return { success: true, count: snapshot.docs.length };
+        } catch (error) {
+            console.error("Error clearing orders: ", error);
+            return { success: false, count: 0 };
+        }
+    };
+
     return (
-        <OrderContext.Provider value={{ orders, addOrder, updateOrderStatus }}>
+        <OrderContext.Provider value={{ orders, addOrder, updateOrderStatus, clearAllOrders }}>
             {children}
         </OrderContext.Provider>
     );

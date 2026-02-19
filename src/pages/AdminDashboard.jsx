@@ -76,7 +76,7 @@ const AdminDashboard = () => {
     const { products, addProduct, updateProduct, deleteProduct } = useShop();
     const { appointments, updateStatus } = useAppointment();
     const { services, addService, updateService, deleteService } = useService();
-    const { orders } = useOrder();
+    const { orders, clearAllOrders } = useOrder();
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -94,6 +94,7 @@ const AdminDashboard = () => {
     // Import State
     const [importing, setImporting] = useState(false);
     const [importMessage, setImportMessage] = useState('');
+    const [clearingOrders, setClearingOrders] = useState(false);
 
     // Protect Route
     useEffect(() => {
@@ -172,6 +173,21 @@ const AdminDashboard = () => {
 
         // Clear message after 5 seconds
         setTimeout(() => setImportMessage(''), 5000);
+    };
+
+    const handleClearOrderHistory = async () => {
+        const confirmed = window.confirm('This will permanently delete all orders from Firestore. Continue?');
+        if (!confirmed) return;
+
+        setClearingOrders(true);
+        const result = await clearAllOrders();
+        setClearingOrders(false);
+
+        if (result.success) {
+            window.alert(`Order history cleared. Deleted ${result.count} orders.`);
+        } else {
+            window.alert('Failed to clear order history. Please check admin permissions and try again.');
+        }
     };
 
     return (
@@ -259,6 +275,14 @@ const AdminDashboard = () => {
                             >
                                 <p className="text-sm font-semibold">Review Appointments</p>
                                 <p className="text-xs text-gray-500 mt-1">Approve or reject pending bookings.</p>
+                            </button>
+                            <button
+                                onClick={handleClearOrderHistory}
+                                disabled={clearingOrders}
+                                className="border rounded-md p-4 text-left hover:border-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                <p className="text-sm font-semibold text-red-600">Clear Order History</p>
+                                <p className="text-xs text-gray-500 mt-1">Permanently delete all orders from database.</p>
                             </button>
                         </div>
                     </section>
